@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>We Need To Talk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --ink: #111111;
+    --muted: #74716B;
+    --accent: #E5482E;
+    --line: rgba(17,17,17,0.13);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121110;
+      --ink: #F3F1EA;
+      --muted: #99958C;
+      --accent: #FF6A47;
+      --line: rgba(243,241,234,0.14);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121110; --ink: #F3F1EA; --muted: #99958C; --accent: #FF6A47;
+    --line: rgba(243,241,234,0.14);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    width: 100%;
+  }
+  ::selection { background: var(--accent); color: var(--bg); }
+
+  .serif { font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: -0.01em; }
+
+  .grain {
+    position: fixed; inset: 0; pointer-events: none;
+    opacity: 0.045; z-index: 260; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #wipe {
+    position: fixed; inset: 0;
+    background: var(--ink);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    z-index: 190; pointer-events: none;
+    will-change: transform;
+  }
+  #flash {
+    position: fixed; inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    z-index: 185; pointer-events: none;
+  }
+
+  .stage { position: relative; width: 100%; height: 100%; }
+
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 8vh 7vw;
+    pointer-events: none;
+    visibility: hidden;
+    will-change: transform, opacity, filter, clip-path;
+  }
+  .scene.active { pointer-events: auto; visibility: visible; }
+
+  .meta {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500;
+  }
+  .meta-row {
+    display: flex; justify-content: space-between;
+    position: fixed; top: calc(4vh + env(safe-area-inset-top, 0px));
+    left: 7vw; right: 7vw; z-index: 20;
+  }
+  .mask { display: inline-block; overflow: hidden; vertical-align: top; }
+  .mask > span { display: inline-block; will-change: transform, filter; }
+
+  /* ---------- SCREEN 01 : WELCOME ---------- */
+  #screen-welcome .kicker-block { margin-bottom: 3vh; }
+  #screen-welcome .kicker-line { display: block; font-size: 11px; }
+  #screen-welcome h1 {
+    font-size: clamp(3.2rem, 11vw, 9.5rem);
+    line-height: 0.88;
+    margin: 0 0 4vh 0;
+    max-width: 18ch;
+    display: flex; flex-wrap: wrap; gap: 0 0.32em;
+  }
+  #screen-welcome h1 .w { display: inline-block; will-change: transform, filter, opacity; }
+  #screen-welcome h1 .dot { color: var(--accent); }
+  .support-lines p { font-size: clamp(1rem, 1.7vw, 1.2rem); color: var(--muted); margin: 0.3rem 0; max-width: 34ch; overflow: hidden; }
+  .support-lines p > span { display: inline-block; }
+  .support-lines { margin-bottom: 4vh; }
+
+  .cta {
+    all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 0.6rem;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.05em;
+    color: var(--ink); padding-bottom: 0.35rem; border-bottom: 1px solid var(--ink); width: fit-content;
+  }
+  .cta .arrow { display: inline-block; will-change: transform; }
+
+  /* ---------- SCREEN 02 : CHOICE ---------- */
+  #screen-question h2 {
+    font-size: clamp(2.4rem, 6.4vw, 4.6rem); line-height: 1.02;
+    margin: 0 0 1.2rem 0; max-width: 17ch;
+  }
+  #screen-question h2 .qline { display: block; overflow: hidden; }
+  #screen-question h2 .qline > span { display: inline-block; }
+  #screen-question .sub { color: var(--muted); font-size: 1rem; margin-bottom: 4.5vh; overflow: hidden; }
+  #screen-question .sub > span { display: inline-block; }
+
+  .options { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .option { padding: 2.4vh 0; border-bottom: 1px solid var(--line); position: relative; }
+  .option .opt-index { font-size: 0.72rem; color: var(--accent); letter-spacing: 0.12em; display: block; margin-bottom: 0.5rem; font-weight: 600; }
+  .option .opt-title {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(1.8rem, 4.4vw, 2.9rem); cursor: pointer; display: inline-block; position: relative;
+    transition: color 0.3s ease;
+  }
+  .option .opt-desc { color: var(--muted); font-size: 0.95rem; max-width: 42ch; margin-top: 0.5rem; }
+  .option .opt-title::after {
+    content: ""; position: absolute; left: 0; bottom: -2px; width: 100%; height: 1px;
+    background: var(--ink); transform: scaleX(0); transform-origin: left;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .option .opt-title:hover::after { transform: scaleX(1); }
+  .option.emphasized .opt-title { color: var(--accent); }
+  .option.emphasized .opt-title::after { background: var(--accent); }
+
+  .dodger {
+    position: fixed; z-index: 55; background: none; border: none;
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(1.8rem, 4.4vw, 2.9rem); color: var(--ink);
+    cursor: pointer; padding: 0.2rem 0.4rem; left: 0; top: 0; will-change: transform; opacity: 0;
+  }
+  .dodge-msg {
+    position: fixed; z-index: 56; font-size: 0.75rem; letter-spacing: 0.06em; color: var(--accent);
+    pointer-events: none; opacity: 0; font-weight: 600; text-transform: uppercase;
+  }
+
+  /* ---------- SCREEN 03 : APOLOGY ---------- */
+  #screen-apology { align-items: flex-start; }
+  #screen-apology .apology-label { margin-bottom: 3.4vh; overflow: hidden; }
+  #screen-apology .apology-label > span { display: inline-block; }
+  #screen-apology .apology-text {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(1.6rem, 3.4vw, 2.4rem); line-height: 1.5; max-width: 23ch; margin: 0 0 3.4rem 0;
+  }
+  #screen-apology .apology-text .line { display: block; overflow: hidden; margin-bottom: 0.15em; padding-bottom: 0.15em; }
+  #screen-apology .apology-text .line > span { display: inline-block; }
+  #screen-apology .apology-text .final-word {
+    font-size: clamp(2rem, 4.6vw, 3.4rem);
+  }
+  #screen-apology .signoff { color: var(--muted); font-size: 0.88rem; margin-bottom: 5.5vh; font-style: italic; overflow: hidden; }
+  #screen-apology .signoff > span { display: inline-block; }
+
+  /* ---------- SCREEN 04 : APOLOGY DECISION ---------- */
+  #screen-decision .status-label { overflow: hidden; margin-bottom: 1.4vh; }
+  #screen-decision .status-label > span { display: inline-block; }
+  #screen-decision .status-value {
+    font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 500;
+    font-size: clamp(1.5rem, 3.2vw, 2.1rem); color: var(--muted);
+    display: flex; align-items: center; gap: 0.6rem; overflow: hidden; margin-bottom: 4vh;
+  }
+  #screen-decision .status-value > span { display: inline-block; }
+  #screen-decision .status-dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; opacity: 0;
+  }
+  #screen-decision .rule {
+    height: 1px; width: 100%; background: var(--line); transform: scaleX(0); transform-origin: left; margin-bottom: 4.5vh;
+  }
+  #screen-decision h2 {
+    font-size: clamp(2.2rem, 6vw, 4.2rem); line-height: 1.04; margin: 0 0 4.5vh 0; max-width: 16ch; overflow: hidden;
+  }
+  #screen-decision h2 > span { display: inline-block; }
+
+  .decision-options { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .decision-option { padding: 2.2vh 0; border-bottom: 1px solid var(--line); }
+  .decision-option .d-tag { font-size: 0.72rem; letter-spacing: 0.12em; display: block; margin-bottom: 0.5rem; font-weight: 600; opacity: 0; }
+  .decision-option .d-title {
+    font-family: 'Cormorant Garamond', serif; font-weight: 500;
+    font-size: clamp(1.7rem, 4vw, 2.7rem); display: inline-block; opacity: 0;
+  }
+  #accept-option .d-tag { color: var(--accent); }
+  #accept-option .d-title { cursor: pointer; position: relative; }
+  #accept-option .d-title::after {
+    content: ""; position: absolute; left: 0; bottom: -2px; width: 100%; height: 1px;
+    background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  #accept-option .d-title:hover::after { transform: scaleX(1); }
+  #decline-option .d-tag { color: var(--muted); }
+  #decline-option .d-title { visibility: hidden; }
+
+  /* ---------- SCREEN 05 : ACCEPTED ---------- */
+  #screen-accepted .resolve-line {
+    height: 1px; width: 64px; background: var(--accent); transform: scaleX(0); transform-origin: left; margin-bottom: 3.5vh;
+  }
+  #screen-accepted h2 { font-size: clamp(3rem, 9vw, 7.2rem); margin: 0 0 1.4rem 0; overflow: hidden; }
+  #screen-accepted h2 > span { display: inline-block; }
+  #screen-accepted p { color: var(--muted); font-size: 1.02rem; max-width: 36ch; margin: 0.25rem 0; overflow: hidden; }
+  #screen-accepted p > span { display: inline-block; }
+  #screen-accepted .final-line { margin-top: 4.5vh; font-size: 0.84rem; color: var(--muted); max-width: 40ch; opacity: 0; }
+
+  #cursor-dot {
+    position: fixed; width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+    pointer-events: none; z-index: 300; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.3s ease;
+  }
+  @media (hover: hover) { #cursor-dot.visible { opacity: 1; } }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 1200px) {
+    #screen-welcome h1 { max-width: 16ch; }
+  }
+  @media (max-width: 900px) {
+    .scene { padding: 7vh 6.5vw; }
+    #screen-apology .apology-text { max-width: 26ch; }
+    .decision-option .d-title, .option .opt-title { font-size: clamp(1.6rem, 5vw, 2.4rem); }
+  }
+  @media (max-width: 640px) {
+    .scene { padding: 6vh 6vw; }
+    #screen-decision .status-value { font-size: 1.3rem; }
+  }
+  @media (max-width: 480px) {
+    #screen-welcome h1 { line-height: 0.92; gap: 0 0.22em; }
+    #screen-welcome .kicker-line { font-size: 10px; }
+    .cta { font-size: 0.82rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cta .arrow { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div id="wipe"></div>
+<div id="flash"></div>
+<div id="cursor-dot"></div>
+
+<div class="stage" id="stage">
+
+  <div class="meta-row" id="meta-row" style="opacity:0;">
+    <span class="meta mask"><span id="meta-date">26.09.26</span></span>
+    <span class="meta mask"><span>AN APOLOGY / 001</span></span>
+  </div>
+
+  <!-- SCREEN 01 : WELCOME -->
+  <section class="scene active" id="screen-welcome">
+    <div class="kicker-block">
+      <span class="meta kicker-line mask"><span>AN UNNECESSARILY</span></span>
+      <span class="meta kicker-line mask"><span>ELABORATE WEBSITE</span></span>
+    </div>
+    <h1 class="serif" id="main-title">
+
+      <span class="w" data-w="hi">HI</span>
+      <span class="w" data-w="ms">MS. DHIKROTH</span>
+      <span class="w" data-w="we">WE</span>
+      <span class="w" data-w="need">NEED</span>
+      <span class="w" data-w="to">TO</span>
+      <span class="w" data-w="talk">TALK<span class="dot">.</span></span>
+    </h1>
+    <div class="support-lines">
+      <p><span id="line1">I could have simply apologized.</span></p>
+      <p><span id="line2">But apparently, we're here now.</span></p>
+    </div>
+    <button class="cta" id="begin-btn">BEGIN <span class="arrow">→</span></button>
+  </section>
+
+  <!-- SCREEN 02 : CHOICE -->
+  <section class="scene" id="screen-question">
+    <h2 class="serif">
+      <span class="qline"><span>HOW</span></span>
+      <span class="qline"><span>WOULD YOU LIKE</span></span>
+      <span class="qline"><span>TO RESOLVE THIS?</span></span>
+    </h2>
+    <p class="sub"><span>Please select one of the following completely reasonable options.</span></p>
+    <div class="options">
+      <div class="option" id="opt-apology">
+        <span class="opt-index meta">OPTION 01</span>
+        <span class="opt-title">AN OFFICIAL APOLOGY</span>
+        <p class="opt-desc">A formal acknowledgement of the situation and my questionable choice of words.</p>
+      </div>
+      <div class="option" id="opt-date-row">
+        <span class="opt-index meta">OPTION 02</span>
+        <span class="opt-title" style="visibility:hidden;">A DATE OUT</span>
+        <p class="opt-desc">An alternative dispute-resolution mechanism involving going out on a date.Bills on me</p>
+      </div>
+    </div>
+  </section>
+
+  <button class="dodger" id="date-button">A DATE OUT</button>
+  <div class="dodge-msg" id="dodge-msg"></div>
+
+  <!-- SCREEN 03 : APOLOGY -->
+  <section class="scene" id="screen-apology">
+    <div class="meta apology-label"><span>OFFICIAL APOLOGY</span></div>
+    <p class="apology-text" id="apology-text">
+      <span class="line"><span>I was wrong.</span></span>
+      <span class="line"><span>I understand that what I did upset you, and I genuinely regret it.</span></span>
+      <span class="line"><span>There isn't a particularly clever explanation for it, so I won't attempt one.</span></span>
+      <span class="line final-word"><span>I'm actually sorry.</span></span>
+    </p>
+    <div class="signoff"><span>— submitted for your consideration</span></div>
+    <button class="cta" id="continue-btn" style="opacity:0;">CONTINUE <span class="arrow">→</span></button>
+  </section>
+
+  <!-- SCREEN 04 : APOLOGY DECISION -->
+  <section class="scene" id="screen-decision">
+    <div class="meta status-label"><span>APOLOGY STATUS</span></div>
+    <div class="status-value"><span class="status-dot"></span><span>Pending review</span></div>
+    <div class="rule"></div>
+    <h2 class="serif"><span>THE DECISION IS YOURS.</span></h2>
+    <div class="decision-options">
+      <div class="decision-option" id="accept-option">
+        <span class="d-tag">I FORGIVE YOU</span>
+        <span class="d-title">APOLOGY ACCEPTED</span>
+      </div>
+      <div class="decision-option" id="decline-option">
+        <span class="d-tag">NOT IN A MILLION YEARS</span>
+        <span class="d-title">APOLOGY NOT ACCEPTED</span>
+      </div>
+    </div>
+  </section>
+
+  <button class="dodger" id="reject-button">APOLOGY NOT ACCEPTED</button>
+  <div class="dodge-msg" id="reject-msg"></div>
+
+  <!-- SCREEN 05 : ACCEPTED -->
+  <section class="scene" id="screen-accepted">
+    <div class="resolve-line" id="resolve-line"></div>
+    <h2 class="serif"><span>ACCEPTED.</span></h2>
+    <p><span>Thank you for your consideration.</span></p>
+    <p><span>The matter has officially been resolved.</span></p>
+    <p class="final-line">This website was unnecessarily built because apparently saying sorry once was insufficient.</p>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var scenes = {
+    welcome: document.getElementById("screen-welcome"),
+    question: document.getElementById("screen-question"),
+    apology: document.getElementById("screen-apology"),
+    decision: document.getElementById("screen-decision"),
+    accepted: document.getElementById("screen-accepted")
+  };
+  var wipe = document.getElementById("wipe");
+  var flash = document.getElementById("flash");
+
+  try {
+    var d = new Date();
+    var dd = String(d.getDate()).padStart(2, "0");
+    var mm = String(d.getMonth() + 1).padStart(2, "0");
+    var yy = String(d.getFullYear()).slice(-2);
+    document.getElementById("meta-date").textContent = dd + "." + mm + "." + yy;
+  } catch (e) {}
+
+  /* ---------------- cursor ---------------- */
+  var dot = document.getElementById("cursor-dot");
+  if (window.matchMedia("(hover: hover)").matches) {
+    window.addEventListener("mousemove", function (e) {
+      dot.classList.add("visible");
+      gsap.to(dot, { x: e.clientX, y: e.clientY, duration: 0.5, ease: "power3.out" });
+    });
+  }
+
+  /* ---------------- magnetic buttons ---------------- */
+  function magnetize(el, strength) {
+    strength = strength || 20;
+    el.addEventListener("mousemove", function (e) {
+      var r = el.getBoundingClientRect();
+      var relX = e.clientX - (r.left + r.width / 2);
+      var relY = e.clientY - (r.top + r.height / 2);
+      gsap.to(el, { x: relX / r.width * strength, y: relY / r.height * strength, duration: 0.4, ease: "power2.out" });
+    });
+    el.addEventListener("mouseleave", function () {
+      gsap.to(el, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.4)" });
+    });
+  }
+  magnetize(document.getElementById("begin-btn"), 14);
+  magnetize(document.getElementById("continue-btn"), 14);
+
+  /* ================= CINEMATIC SCENE TRANSITION ================= */
+  function cinematicTransition(fromKey, toKey, enterFn) {
+    var from = scenes[fromKey];
+    var to = scenes[toKey];
+
+    if (reduced) {
+      from.classList.remove("active");
+      to.classList.add("active");
+      gsap.fromTo(to, { opacity: 0 }, { opacity: 1, duration: 0.4 });
+      if (enterFn) enterFn();
+      return;
+    }
+
+    var tl = gsap.timeline();
+    tl.to(from, { y: "-3vh", scale: 1.06, filter: "blur(10px)", opacity: 0, duration: 0.55, ease: "power3.in" }, 0)
+      .fromTo(wipe, { scaleY: 0 }, { scaleY: 1, duration: 0.5, ease: "power4.in", transformOrigin: "bottom" }, 0.05)
+      .call(function () {
+        from.classList.remove("active");
+        to.classList.add("active");
+        gsap.set(to, { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", clipPath: "inset(0% 0% 100% 0%)" });
+        gsap.set(wipe, { transformOrigin: "top" });
+      })
+      .to(wipe, { scaleY: 0, duration: 0.65, ease: "power4.out" }, "+=0.06")
+      .to(to, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.65, ease: "power4.out" }, "<")
+      .call(function () { if (enterFn) enterFn(); }, null, "-=0.35");
+  }
+
+  /* ================= REUSABLE ESCAPING BUTTON ================= */
+  function createDodger(button, placeholderSelector, messages, msgEl, onEscalate) {
+    var attempts = 0;
+
+    function placeInitial() {
+      var target = document.querySelector(placeholderSelector);
+      var r = target.getBoundingClientRect();
+      button.style.left = r.left + "px";
+      button.style.top = r.top + "px";
+    }
+
+    function randomSafePosition() {
+      var w = button.offsetWidth || 200;
+      var h = button.offsetHeight || 56;
+      var margin = 24;
+      var maxX = window.innerWidth - w - margin;
+      var maxY = window.innerHeight - h - margin;
+      var x = margin + Math.random() * Math.max(1, maxX - margin);
+      var y = margin + Math.random() * Math.max(1, maxY - margin);
+      return { x: x, y: y };
+    }
+
+    function interact() {
+      var pos = randomSafePosition();
+      gsap.fromTo(button,
+        { left: button.getBoundingClientRect().left, top: button.getBoundingClientRect().top },
+        { left: pos.x, top: pos.y, duration: 0.5, ease: "back.out(1.7)" }
+      );
+      if (msgEl) {
+        msgEl.textContent = messages[Math.min(attempts, messages.length - 1)];
+        msgEl.style.left = pos.x + "px";
+        msgEl.style.top = (pos.y - 26) + "px";
+        gsap.fromTo(msgEl, { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 });
+        gsap.to(msgEl, { opacity: 0, duration: 0.4, delay: 1.1 });
+      }
+      attempts++;
+      if (onEscalate) onEscalate(attempts);
+    }
+
+    button.addEventListener("click", function (e) { e.preventDefault(); interact(); });
+    button.addEventListener("touchstart", function (e) { e.preventDefault(); interact(); }, { passive: false });
+    button.addEventListener("mouseenter", function () { if (attempts > 0) interact(); });
+
+    return { placeInitial: placeInitial };
+  }
+
+  /* ================= SCREEN 01 : introTimeline ================= */
+  function introTimeline() {
+    var metaSpans = document.querySelectorAll("#meta-row .mask > span");
+    var kickerSpans = document.querySelectorAll(".kicker-line > span");
+    var wHi = document.querySelector('[data-w="hi"]');
+    var wMs = document.querySelector('[data-w="ms"]');
+    var wWe = document.querySelector('[data-w="we"]');
+    var wNeed = document.querySelector('[data-w="need"]');
+    var wTo = document.querySelector('[data-w="to"]');
+    var wTalk = document.querySelector('[data-w="talk"]');
+    var line1 = document.getElementById("line1");
+    var line2 = document.getElementById("line2");
+    var beginBtn = document.getElementById("begin-btn");
+    var arrow = beginBtn.querySelector(".arrow");
+
+    if (reduced) {
+      gsap.set(["#meta-row", ".mask > span", wHi, wMs, wWe, wNeed, wTo, wTalk, line1, line2, beginBtn],
+        { opacity: 1, y: 0, x: 0, scale: 1, filter: "blur(0px)" });
+      gsap.set("#meta-row", { opacity: 1 });
+      return;
+    }
+
+    gsap.set("#meta-row", { opacity: 1 });
+    gsap.set(metaSpans, { yPercent: 120 });
+    gsap.set(kickerSpans, { yPercent: 130, filter: "blur(6px)" });
+    gsap.set([wHi, wMs], { opacity: 0, y: 34 });
+    gsap.set(wWe, { opacity: 0, y: 34 });
+    gsap.set(wNeed, { opacity: 0, x: -50 });
+    gsap.set(wTo, { opacity: 0, scale: 0.95 });
+    gsap.set(wTalk, { opacity: 0, filter: "blur(14px)" });
+    gsap.set(line1, { yPercent: 115 });
+    gsap.set(line2, { yPercent: 115 });
+    gsap.set(beginBtn, { opacity: 0, y: 14 });
+
+    var tl = gsap.timeline({ defaults: { ease: "power4.out" } });
+
+    tl.to(metaSpans[0], { yPercent: 0, duration: 0.6 }, 0.4)
+      .to(metaSpans[1], { yPercent: 0, duration: 0.6 }, 0.8)
+      .to(kickerSpans[0], { yPercent: 0, filter: "blur(0px)", duration: 0.65 }, 1.2)
+      .to(kickerSpans[1], { yPercent: 0, filter: "blur(0px)", duration: 0.65 }, 1.7)
+      .to(wHi, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 2.2)
+      .to(wMs, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 2.55)
+      .to(wWe, { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 3.25)
+      .to(wNeed, { opacity: 1, x: 0, duration: 0.65, ease: "power3.out" }, 3.65)
+      .to(wTo, { opacity: 1, scale: 1, duration: 0.55, ease: "power2.out" }, 4.05)
+      .to(wTalk, { opacity: 1, filter: "blur(0px)", duration: 0.85, ease: "expo.out" }, 4.55)
+      .to(line1, { yPercent: 0, duration: 0.8, ease: "power3.out" }, 4.5)
+      .to(line2, { yPercent: 0, duration: 0.8, ease: "power3.out" }, 5.2)
+      .to(beginBtn, { opacity: 1, y: 0, duration: 0.6 }, 6.0)
+      .call(function () {
+        gsap.to(arrow, { x: 5, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: -1 });
+      });
+  }
+
+  /* ================= SCREEN 02 : choiceTimeline + dateInteraction ================= */
+  var dateButton = document.getElementById("date-button");
+  var dodgeMsg = document.getElementById("dodge-msg");
+  var dateDodger = createDodger(
+    dateButton, "#opt-date-row .opt-title",
+    ["Nice try.", "We're not doing that.", "Please."],
+    dodgeMsg,
+    function (attempts) { if (attempts >= 2) document.getElementById("opt-apology").classList.add("emphasized"); }
+  );
+
+  function choiceTimeline() {
+    dateDodger.placeInitial();
+
+    var qLines = document.querySelectorAll("#screen-question .qline > span");
+    var sub = document.querySelector("#screen-question .sub > span");
+    var opt1 = document.getElementById("opt-apology");
+    var opt2 = document.getElementById("opt-date-row");
+    var opt1Index = opt1.querySelector(".opt-index");
+    var opt1Title = opt1.querySelector(".opt-title");
+    var opt1Desc = opt1.querySelector(".opt-desc");
+    var opt2Index = opt2.querySelector(".opt-index");
+    var opt2Desc = opt2.querySelector(".opt-desc");
+
+    if (reduced) {
+      gsap.set([qLines, sub, opt1Index, opt1Title, opt1Desc, opt2Index, opt2Desc, dateButton], { opacity: 1, y: 0 });
+      dateButton.style.opacity = "1";
+      return;
+    }
+
+    gsap.set(qLines, { yPercent: 115, filter: "blur(5px)" });
+    gsap.set(sub, { yPercent: 115 });
+    gsap.set([opt1Index, opt1Title, opt1Desc, opt2Index, opt2Desc], { opacity: 0, y: 12 });
+    gsap.set(dateButton, { opacity: 0 });
+
+    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.to(qLines[0], { yPercent: 0, filter: "blur(0px)", duration: 0.6 }, 0.1)
+      .to(qLines[1], { yPercent: 0, filter: "blur(0px)", duration: 0.65 }, 0.42)
+      .to(qLines[2], { yPercent: 0, filter: "blur(0px)", duration: 0.7 }, 0.78)
+      .to(sub, { yPercent: 0, duration: 0.6 }, 1.35)
+      .to(opt1Index, { opacity: 1, y: 0, duration: 0.4 }, 1.95)
+      .to(opt1Title, { opacity: 1, y: 0, duration: 0.55 }, 2.1)
+      .to(opt1Desc, { opacity: 1, y: 0, duration: 0.5 }, 2.35)
+      .to(opt2Index, { opacity: 1, y: 0, duration: 0.4 }, 2.95)
+      .to(opt2Desc, { opacity: 1, y: 0, duration: 0.5 }, 3.15)
+      .to(dateButton, { opacity: 1, duration: 0.4 }, 3.35);
+  }
+
+  document.getElementById("opt-apology").addEventListener("click", function () {
+    dateButton.style.pointerEvents = "none";
+    gsap.to(dateButton, { opacity: 0, duration: 0.3 });
+    gsap.to(dodgeMsg, { opacity: 0, duration: 0.2 });
+    cinematicTransition("question", "apology", apologyTimeline);
+  });
+
+  /* ================= SCREEN 03 : apologyTimeline ================= */
+  function apologyTimeline() {
+    var label = document.querySelector("#screen-apology .apology-label > span");
+    var lines = document.querySelectorAll("#screen-apology .apology-text .line > span");
+    var signoff = document.querySelector("#screen-apology .signoff > span");
+    var continueBtn = document.getElementById("continue-btn");
+
+    if (reduced) {
+      gsap.set([label, lines, signoff, continueBtn], { opacity: 1, y: 0, filter: "blur(0px)" });
+      return;
+    }
+
+    gsap.set(label, { yPercent: 120 });
+    gsap.set(lines, { yPercent: 105, filter: "blur(6px)" });
+    gsap.set(signoff, { yPercent: 105 });
+    gsap.set(continueBtn, { opacity: 0, y: 10 });
+
+    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.to(label, { yPercent: 0, duration: 0.55 }, 0.15)
+      .to(lines[0], { yPercent: 0, filter: "blur(0px)", duration: 0.8 }, 0.75)
+      .to(lines[1], { yPercent: 0, filter: "blur(0px)", duration: 0.85 }, 1.75)
+      .to(lines[2], { yPercent: 0, filter: "blur(0px)", duration: 0.85 }, 2.95)
+      .to(lines[3], { yPercent: 0, filter: "blur(0px)", duration: 0.9, ease: "expo.out" }, 4.15)
+      .to(signoff, { yPercent: 0, duration: 0.6 }, 5.15)
+      .to(continueBtn, { opacity: 1, y: 0, duration: 0.5 }, 5.75);
+  }
+
+  document.getElementById("continue-btn").addEventListener("click", function () {
+    cinematicTransition("apology", "decision", decisionTimeline);
+  });
+
+  /* ================= SCREEN 04 : decisionTimeline + rejectInteraction ================= */
+  var rejectButton = document.getElementById("reject-button");
+  var rejectMsg = document.getElementById("reject-msg");
+  var rejectDodger = createDodger(
+    rejectButton, "#decline-option .d-title",
+    ["No.", "Let's not.", "That option appears to be unavailable.", "Interesting."],
+    rejectMsg,
+    null
+  );
+
+  function decisionTimeline() {
+    rejectDodger.placeInitial();
+
+    var statusLabel = document.querySelector("#screen-decision .status-label > span");
+    var statusDot = document.querySelector("#screen-decision .status-dot");
+    var statusText = document.querySelector("#screen-decision .status-value > span:last-child");
+    var rule = document.querySelector("#screen-decision .rule");
+    var heading = document.querySelector("#screen-decision h2 > span");
+    var acceptTag = document.querySelector("#accept-option .d-tag");
+    var acceptTitle = document.querySelector("#accept-option .d-title");
+    var declineTag = document.querySelector("#decline-option .d-tag");
+
+    if (reduced) {
+      gsap.set([statusLabel, statusDot, statusText, rule, heading, acceptTag, acceptTitle, declineTag, rejectButton],
+        { opacity: 1, y: 0, scaleX: 1 });
+      rejectButton.style.opacity = "1";
+      return;
+    }
+
+    gsap.set(statusLabel, { yPercent: 120 });
+    gsap.set(statusDot, { opacity: 0, scale: 0.4 });
+    gsap.set(statusText, { yPercent: 110 });
+    gsap.set(rule, { scaleX: 0 });
+    gsap.set(heading, { yPercent: 108, filter: "blur(6px)" });
+    gsap.set([acceptTag, declineTag], { opacity: 0, y: 8 });
+    gsap.set(acceptTitle, { opacity: 0, y: 12 });
+    gsap.set(rejectButton, { opacity: 0 });
+
+    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.to(statusLabel, { yPercent: 0, duration: 0.55 }, 0.1)
+      .to(statusDot, { opacity: 1, scale: 1, duration: 0.4 }, 0.7)
+      .to(statusText, { yPercent: 0, duration: 0.6 }, 0.8)
+      .to(rule, { scaleX: 1, duration: 0.9, ease: "power2.inOut" }, 1.55)
+      .to(heading, { yPercent: 0, filter: "blur(0px)", duration: 0.85, ease: "expo.out" }, 2.35)
+      .to(acceptTag, { opacity: 1, y: 0, duration: 0.4 }, 3.25)
+      .to(acceptTitle, { opacity: 1, y: 0, duration: 0.55 }, 3.4)
+      .to(declineTag, { opacity: 1, y: 0, duration: 0.4 }, 3.85)
+      .to(rejectButton, { opacity: 1, duration: 0.4 }, 4.0);
+  }
+
+  document.getElementById("accept-option").addEventListener("click", function () {
+    rejectButton.style.pointerEvents = "none";
+    gsap.to(rejectButton, { opacity: 0, duration: 0.3 });
+    gsap.to(rejectMsg, { opacity: 0, duration: 0.2 });
+    cinematicTransition("decision", "accepted", acceptedTimeline);
+  });
+
+  /* ================= SCREEN 05 : acceptedTimeline ================= */
+  function acceptedTimeline() {
+    var resolveLine = document.getElementById("resolve-line");
+    var h2 = document.querySelector("#screen-accepted h2 > span");
+    var ps = document.querySelectorAll("#screen-accepted p:not(.final-line) > span");
+    var finalLine = document.querySelector("#screen-accepted .final-line");
+
+    if (reduced) {
+      gsap.set([resolveLine, h2, ps, finalLine], { opacity: 1, y: 0, scaleX: 1 });
+      return;
+    }
+
+    gsap.set(resolveLine, { scaleX: 0 });
+    gsap.set(h2, { opacity: 0, scale: 1.3, filter: "blur(16px)" });
+    gsap.set(ps, { yPercent: 110 });
+    gsap.set(finalLine, { opacity: 0, y: 10 });
+
+    var tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    tl.to(flash, { opacity: 0.14, duration: 0.25, ease: "power1.in" }, 0)
+      .to(flash, { opacity: 0, duration: 0.5, ease: "power1.out" }, 0.25)
+      .to(resolveLine, { scaleX: 1, duration: 0.5, ease: "power2.inOut" }, 0.15)
+      .to(resolveLine, { scaleX: 0, transformOrigin: "right", duration: 0.4, ease: "power2.in" }, 0.75)
+      .to(h2, { opacity: 1, scale: 1, filter: "blur(0px)", duration: 1.0, ease: "expo.out" }, 0.9)
+      .to(ps[0], { yPercent: 0, duration: 0.65 }, 1.9)
+      .to(ps[1], { yPercent: 0, duration: 0.65 }, 2.4)
+      .to(finalLine, { opacity: 1, y: 0, duration: 0.7 }, 3.25);
+  }
+
+  /* ================= NAV: BEGIN -> CHOICE ================= */
+  document.getElementById("begin-btn").addEventListener("click", function () {
+    cinematicTransition("welcome", "question", choiceTimeline);
+  });
+
+  window.addEventListener("resize", function () {
+    if (scenes.decision.classList.contains("active")) rejectDodger.placeInitial();
+  });
+
+  /* ================= init ================= */
+  function init() {
+    introTimeline();
+  }
+  init();
+
+})();
+</script>
+</body>
+</html>
